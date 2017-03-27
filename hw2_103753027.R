@@ -2,6 +2,7 @@
 
 # read parameters
 #library('ROCR')
+library(pROC)
 args = commandArgs(trailingOnly=TRUE)
 if (length(args)==0) {
   stop("", call.=FALSE)
@@ -31,6 +32,7 @@ if (length(args)==0) {
   print(paste("positive target :", query_m))
   print(paste("output file:", out_f))
   print(paste("files      :", files))
+  print("Please wait...")
   
   # read files
   method <- c()
@@ -90,12 +92,14 @@ if (length(args)==0) {
     method <- c(method,file)
     Pre.score <- c(d$pred.score)
     Pre.label <- c(d$prediction)
-    #AUC <- auc(x=roc(Pre.score,0.5), min = 0, max = 1)
+    Pre.label <- Pre.label - 1
+    AUC <- auc(multiclass.roc(Pre.score,Pre.label), min = 0, max = 1)
+    AUC <- round(AUC,digits = 6)
     AUCs <- c(AUCs,AUC)
+    #print(Pre.score)
+    #print(Pre.label)
     
-    
-    
-    
+
     if(sen > sens_max$num){
       sens_max$num <- sen
       sens_max$name <- file
@@ -111,6 +115,7 @@ if (length(args)==0) {
       F1_max$name <- file 
     }
     
+    
     if(AUC > AUC_max$num){
       AUC_max$num <- AUC
       AUC_max$name <- file
@@ -124,7 +129,6 @@ if (length(args)==0) {
   out_data[nrow(out_data)+1,] <- c("highest",sens_max$name,spec_max$name,F1_max$name,AUC_max$name)
   
   write.table(out_data, file=out_f, row.names = F, quote = F)
-  
   
 }
 
