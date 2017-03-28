@@ -94,9 +94,14 @@ if (length(args)==0) {
     specificity <- c(specificity,Spe)
     file <- strsplit(file,".csv")[[1]]
     method <- c(method,file)
-    Pre.score <- c(d$pred.score)
+    if(query_m == "female"){
+      Pre.score <- 1 - c(d$pred.score)
+    }else{
+      Pre.score <- c(d$pred.score)  
+    }
+    
     Pre.label <- c(d$reference)
-    Pre.label <- Pre.label - 1
+    
     #AUC <- auc(multiclass.roc(Pre.score,Pre.label), min = 0, max = 1)
     AUC <- prediction(Pre.score,Pre.label)
     AUC <- round(attributes(performance(AUC, 'auc'))$y.values[[1]], 2)
