@@ -1,14 +1,15 @@
 #作業2_new 完成版 103753027 顏碩亨
 
-# read parameters
-#library('ROCR')
-library(pROC)
+
+library('ROCR')
+#library(pROC)
+#------------------read parameters---------------
 args = commandArgs(trailingOnly=TRUE)
 if (length(args)==0) {
   stop("", call.=FALSE)
 }else{
   
-  # parse parameters
+  #----------------parse parameters----------------
   i<-1 
   while(i < length(args))
   {
@@ -28,13 +29,14 @@ if (length(args)==0) {
     i<-i+1
   }
   
+  #-----------show status-----------
   print("PROCESS")
   print(paste("positive target :", query_m))
   print(paste("output file:", out_f))
   print(paste("files      :", files))
   print("Please wait...")
   
-  # read files
+  
   method <- c()
   sensitivity <- c() 
   specificity <- c()
@@ -45,6 +47,7 @@ if (length(args)==0) {
   F1_max <- list(num=0,name="")
   AUC_max <- list(num=0,name="")
   
+  #-----------read files------------
   for(file in files)
   {
     TP <- 0
@@ -57,6 +60,7 @@ if (length(args)==0) {
     Pre.score <- c()
     Pre.label <- c()
     
+    #------------build confusion table---------
     d<-read.table(file, header=T,sep=",")
     for(num in c(1:nrow(d))){
       if(d[num,2] == d[num,3]){
@@ -75,8 +79,8 @@ if (length(args)==0) {
       }
       
     }
-    
 
+    #-----------calculate sensitivity  specificity AUC ----------
     Pre <- TP/(TP+FP)
     Rec <- TP/(TP+FN)
     f1 <- (2 * Pre * Rec)/(Pre + Rec)
@@ -91,15 +95,16 @@ if (length(args)==0) {
     file <- strsplit(file,".csv")[[1]]
     method <- c(method,file)
     Pre.score <- c(d$pred.score)
-    Pre.label <- c(d$prediction)
+    Pre.label <- c(d$reference)
     Pre.label <- Pre.label - 1
-    AUC <- auc(multiclass.roc(Pre.score,Pre.label), min = 0, max = 1)
-    AUC <- round(AUC,digits = 6)
+    #AUC <- auc(multiclass.roc(Pre.score,Pre.label), min = 0, max = 1)
+    AUC <- prediction(Pre.score,Pre.label)
+    AUC <- round(attributes(performance(AUC, 'auc'))$y.values[[1]], 2)
+    #AUC <- round(AUC,digits = 2)
     AUCs <- c(AUCs,AUC)
-    #print(Pre.score)
-    #print(Pre.label)
+   
     
-
+    #-----------calculate MAX----------
     if(sen > sens_max$num){
       sens_max$num <- sen
       sens_max$name <- file
@@ -122,12 +127,14 @@ if (length(args)==0) {
     }
     
   }
-  # output file
+  
+  #------------------write data frame -----------------
   out_data<-data.frame(method, sensitivity, specificity, F1, AUC = AUCs, stringsAsFactors = F)
   
-  #最下面一列做結尾
+  #------------- add final row to the end of the table-----------------
   out_data[nrow(out_data)+1,] <- c("highest",sens_max$name,spec_max$name,F1_max$name,AUC_max$name)
-  
+ 
+  #------------- output file-----------------
   write.table(out_data, file=out_f, row.names = F, quote = F)
   
 }
